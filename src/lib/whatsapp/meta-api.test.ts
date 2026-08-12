@@ -1,9 +1,42 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   INTERACTIVE_LIMITS,
+  markMessageRead,
   sendInteractiveButtons,
   sendInteractiveList,
 } from "./meta-api";
+
+describe("markMessageRead", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("marks the inbound message read and requests a typing indicator", async () => {
+    let captured: { url: string; body: Record<string, unknown> } | null = null;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init: RequestInit) => {
+        captured = { url, body: JSON.parse(String(init.body)) };
+        return new Response(JSON.stringify({ success: true }), { status: 200 });
+      }),
+    );
+
+    await markMessageRead({
+      phoneNumberId: "phone-1",
+      accessToken: "token-1",
+      messageId: "wamid.inbound",
+    });
+
+    expect(captured).not.toBeNull();
+    expect(captured!.url).toContain("phone-1/messages");
+    expect(captured!.body).toEqual({
+      messaging_product: "whatsapp",
+      status: "read",
+      message_id: "wamid.inbound",
+      typing_indicator: { type: "text" },
+    });
+  });
+});
 
 // All assertions in this file run BEFORE the network call. We stub fetch
 // to a never-resolving mock so a test that accidentally falls through to

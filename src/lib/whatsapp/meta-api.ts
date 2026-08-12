@@ -16,6 +16,39 @@ export interface MetaSendResult {
   messageId: string
 }
 
+export interface MarkMessageReadArgs {
+  phoneNumberId: string
+  accessToken: string
+  messageId: string
+  showTyping?: boolean
+}
+
+/** Mark an inbound message read and optionally show WhatsApp's typing indicator. */
+export async function markMessageRead(
+  args: MarkMessageReadArgs
+): Promise<void> {
+  const { phoneNumberId, accessToken, messageId, showTyping = true } = args
+  const url = `${META_API_BASE}/${phoneNumberId}/messages`
+  const body: Record<string, unknown> = {
+    messaging_product: 'whatsapp',
+    status: 'read',
+    message_id: messageId,
+  }
+  if (showTyping) body.typing_indicator = { type: 'text' }
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify(body),
+  })
+  if (!response.ok) {
+    await throwMetaError(response, `Meta API error: ${response.status}`)
+  }
+}
+
 export interface MetaPhoneInfo {
   id: string
   display_phone_number: string
