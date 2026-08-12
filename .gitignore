@@ -2,6 +2,9 @@
 
 # dependencies
 /node_modules
+/node_modules.bad*/
+/node_modules.corrupt/
+/wacrm/
 /.pnp
 .pnp.*
 .yarn/*
@@ -29,6 +32,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+*.log
 
 # env files (can opt-in for committing if needed)
 .env*

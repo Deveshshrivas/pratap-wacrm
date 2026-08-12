@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
+const projectRoot = path.dirname(fileURLToPath(import.meta.url));
 
 /**
  * Baseline security headers applied to every response.
@@ -64,6 +67,11 @@ const SECURITY_HEADERS = [
 ] as const;
 
 const nextConfig: NextConfig = {
+  // Multiple lockfiles exist elsewhere on this machine. Pinning the root
+  // prevents Turbopack from watching unrelated directories.
+  turbopack: {
+    root: projectRoot,
+  },
   /**
    * Cache-Control policy.
    *
@@ -101,6 +109,22 @@ const nextConfig: NextConfig = {
    * they apply to every response regardless of which cache rule
    * matched.
    */
+  /**
+   * Local-dev proxy for the Pratap-AI WhatsApp bot (FastAPI on :8000).
+   * wacrm's outbound webhook deliverer requires a public https target,
+   * and both apps share one ngrok tunnel — so the bot's webhook receiver
+   * is exposed as a path on this app and proxied across localhost:
+   *   https://<tunnel>/bot-hook/wacrm-webhook → http://localhost:8000/wacrm-webhook
+   */
+  async rewrites() {
+    return [
+      {
+        source: "/bot-hook/:path*",
+        destination: "http://127.0.0.1:8000/:path*",
+      },
+    ];
+  },
+
   async headers() {
     return [
       {
